@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 import ta
+import requests
 
 # Descargar datos de USD/JPY en la última semana con intervalos de 1 hora
-data = yf.download("USDJPY=X", period="7d", interval="1h", auto_adjust=False)
+data = yf.download("USDJPY=X", period="7d", interval="15m", auto_adjust=False)
 
 # Asegurar que 'Close' es una Serie (1D)
 close_prices = data["Close"].squeeze()
@@ -34,3 +35,26 @@ elif last_rsi < 45 and last_macd < last_signal_macd:
     print("\n❌ 📉 Señal de VENTA detectada")
 else:
     print("\n🔍 No hay señales claras, seguir monitoreando.")
+
+# 🔔 Enviar alerta a Telegram
+TOKEN = '8090692206:AAHGDuQMx1RdjxuwV1FWdTJYXtDz6Nkgko4'
+CHAT_ID = '1380161872'
+
+def enviar_alerta_telegram(mensaje):
+    url = f'https://api.telegram.org/bot{TOKEN}/sendMessage'
+    data = {'chat_id': CHAT_ID, 'text': mensaje}
+    requests.post(url, data=data)
+
+# Detectar y enviar señal según condiciones
+if last_rsi > 50 and last_macd > last_signal_macd:
+    mensaje = f"✅ Señal de COMPRA detectada para USD/JPY\n📈 RSI: {last_rsi:.2f} | 📊 MACD: {last_macd:.4f}"
+    print("\n" + mensaje)
+    enviar_alerta_telegram(mensaje)
+elif last_rsi < 45 and last_macd < last_signal_macd:
+    mensaje = f"❌ Señal de VENTA detectada para USD/JPY\n📈 RSI: {last_rsi:.2f} | 📊 MACD: {last_macd:.4f}"
+    print("\n" + mensaje)
+    enviar_alerta_telegram(mensaje)
+else:
+    mensaje = f"🔍 No hay señal clara para USD/JPY\n📈 RSI: {last_rsi:.2f} | 📊 MACD: {last_macd:.4f}"
+    print("\n" + mensaje)
+    enviar_alerta_telegram(mensaje)
